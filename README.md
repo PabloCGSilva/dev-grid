@@ -1,5 +1,3 @@
-Here's a comprehensive `README.md` file for your project, detailing all the necessary instructions, decisions, and information.
-
 ```markdown
 # Flask Weather Data Collector
 
