@@ -1,0 +1,5 @@
+Flask
+Flask-RESTful
+aiohttp
+python-dotenv
+pytest
