@@ -1,94 +1,59 @@
-import asyncio
-import aiohttp
-from datetime import datetime
-from flask import Flask, request, jsonify
-from flask_restful import Api, Resource
-import os
-from dotenv import load_dotenv
-import json
-
-load_dotenv()
+import logging
+from flask import Flask, jsonify, request
+from werkzeug.exceptions import BadRequest, InternalServerError, NotFound
 
 app = Flask(__name__)
-api = Api(app)
+logging.basicConfig(level=logging.DEBUG)
 
-data_file = 'data/weather_data.json'
-
-def load_data():
-    if os.path.exists(data_file):
-        with open(data_file, 'r') as file:
-            return json.load(file)
-    else:
-        return {}
-
-def save_data(data):
-    with open(data_file, 'w') as file:
-        json.dump(data, file, indent=4)
-
-class WeatherCollector(Resource):
-    def __init__(self):
-        self.api_key = os.getenv("OPEN_WEATHER_API_KEY")
-        self.weather_data = load_data()
-
-    def post(self):
+@app.route('/collect', methods=['POST'])
+def collect_data():
+    try:
         data = request.get_json()
-        user_id = data['user_id']
-        city_ids = data['city_ids']
 
-        if user_id in self.weather_data:
-            return {"message": "User ID already exists"}, 400
+        if not data or 'user_id' not in data or 'city_ids' not in data:
+            app.logger.warning('Missing or invalid data provided')
+            return jsonify({'error': 'Missing or invalid data provided'}), 400
 
-        self.weather_data[user_id] = {
-            "datetime": datetime.now().isoformat(),
-            "progress": 0,
-            "data": []
-        }
-        save_data(self.weather_data)
+        user_id = data.get('user_id')
+        city_ids = data.get('city_ids')
 
-        asyncio.run(self.collect_weather_data(user_id, city_ids))
-        return {"message": "Data collection in progress"}, 202
+        if not isinstance(city_ids, list):
+            app.logger.warning('Invalid format for city_ids')
+            return jsonify({'error': 'Invalid format for city_ids'}), 400
 
-    async def collect_weather_data(self, user_id, city_ids):
-        async with aiohttp.ClientSession() as session:
-            total_cities = len(city_ids)
-            tasks = []
-            for idx, city_id in enumerate(city_ids):
-                if idx % 60 == 0 and idx != 0:
-                    await asyncio.sleep(60)
-                tasks.append(self.fetch_weather(session, user_id, city_id, city_ids))
-                if len(tasks) >= 60:
-                    await asyncio.gather(*tasks)
-                    tasks = []
-            if tasks:
-                await asyncio.gather(*tasks)
-            
-            self.weather_data[user_id]["progress"] = 100
-            save_data(self.weather_data)
+        if len(city_ids) == 0:
+            app.logger.warning('Empty city_ids provided')
+            return jsonify({'error': 'Empty city_ids provided'}), 400
 
-    async def fetch_weather(self, session, user_id, city_id, city_ids):
-        async with session.get(f"https://api.openweathermap.org/data/2.5/weather?id={city_id}&appid={self.api_key}&units=metric") as response:
-            data = await response.json()
-            if 'main' in data:
-                self.weather_data[user_id]["data"].append({
-                    "city_id": city_id,
-                    "temperature": data["main"]["temp"],
-                    "humidity": data["main"]["humidity"]
-                })
-                progress = len(self.weather_data[user_id]["data"]) / len(city_ids) * 100
-                self.weather_data[user_id]["progress"] = progress
-                save_data(self.weather_data)
+        if len(city_ids) > 1000:
+            app.logger.error('Exceeded maximum number of city_ids')
+            return jsonify({'error': 'Exceeded maximum number of city_ids'}), 400
 
-class Progress(Resource):
-    def get(self, user_id):
-        if user_id in load_data():
-            return jsonify(load_data()[user_id])
-        else:
-            return {"message": "User not found"}, 404
+        # Placeholder for data processing logic
+        # Replace with actual data processing code
+        process_request(user_id, city_ids)  # Assuming a function `process_request`
 
-api.add_resource(WeatherCollector, '/collect')
-api.add_resource(Progress, '/progress/<string:user_id>')
+        return jsonify({'status': 'Data collected successfully'}), 202
+
+    except BadRequest as e:
+        app.logger.warning(f'Bad request: {e}')
+        return jsonify({'error': str(e)}), 400
+
+    except NotFound as e:
+        app.logger.warning(f'Resource not found: {e}')
+        return jsonify({'error': 'Resource not found'}), 404
+
+    except InternalServerError as e:
+        app.logger.error(f'Internal server error: {e}')
+        return jsonify({'error': 'Internal server error'}), 500
+
+    except Exception as e:
+        app.logger.error(f'Unexpected error: {e}')
+        return jsonify({'error': 'Internal server error'}), 500
+
+def process_request(user_id, city_ids):
+    # Placeholder for actual data processing logic
+    pass
 
 if __name__ == '__main__':
-    if not os.path.exists('data'):
-        os.makedirs('data')
-    app.run(host='0.0.0.0', port=5000, debug=False)
+    app.run(debug=True)

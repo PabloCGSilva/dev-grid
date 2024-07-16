@@ -1,1 +1,51 @@
-{}
+{
+    "test_user": {
+        "datetime": "2024-07-15T17:38:03.780901",
+        "progress": 100,
+        "data": [
+            {
+                "city_id": 3439781,
+                "temperature": 9.29,
+                "humidity": 82
+            },
+            {
+                "city_id": 3439525,
+                "temperature": 10.58,
+                "humidity": 79
+            }
+        ]
+    },
+    "12345": {
+        "datetime": "2024-07-15T18:06:12.572567",
+        "progress": 100,
+        "data": [
+            {
+                "city_id": 3439525,
+                "temperature": 10.58,
+                "humidity": 79
+            }
+        ]
+    },
+    "": {
+        "datetime": "2024-07-15T17:54:56.564691",
+        "progress": 100,
+        "data": [
+            {
+                "city_id": 3439525,
+                "temperature": 10.58,
+                "humidity": 79
+            }
+        ]
+    },
+    "12345": {
+        "datetime": "2024-07-15T18:11:35.602815",
+        "progress": 100,
+        "data": [
+            {
+                "city_id": 3439525,
+                "temperature": 10.58,
+                "humidity": 79
+            }
+        ]
+    }
+}
